@@ -1,24 +1,16 @@
 package edu.levifranca.meguia;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by levifranca on 07/09/16.
  */
 public class BeaconInfo {
-
-    /*
-    id: [integer],
-    nome: [string],
-    endereco_MAC: [string],
-    descricao: [string],
-    tags: [string_array],
-    mensagem: [string],
-    audio: [string], (caminho do arquivo),
-    vibrar: [boolean],
-    regiao: [integer],
-    ativo: [boolean]
-     */
 
     private Integer id;
 
@@ -39,6 +31,33 @@ public class BeaconInfo {
     private String regiao;
 
     private Boolean ativo;
+
+    public static BeaconInfo getInstanceFromJSON(JSONObject beaconJson) throws JSONException {
+        BeaconInfo bInfo = new BeaconInfo();
+
+        bInfo.setId(beaconJson.getInt("id"));
+        bInfo.setNome(beaconJson.getString("nome"));
+        bInfo.setEndereco_MAC(beaconJson.getString("endereco_mac"));
+        bInfo.setDescricao(beaconJson.getString("descricao"));
+        bInfo.setTags(getTagListFromJSONArray(beaconJson.getJSONArray("tags")));
+        bInfo.setMensagem(beaconJson.getString("mensagem"));
+        bInfo.setAudio(beaconJson.getString("audio"));
+        bInfo.setVibrar(beaconJson.getBoolean("vibrar"));
+        bInfo.setRegiao(beaconJson.getString("regiao"));
+        bInfo.setAtivo(beaconJson.getBoolean("ativo"));
+
+        return bInfo;
+    }
+
+    private static List<String> getTagListFromJSONArray(JSONArray jsonArray) throws JSONException {
+        List<String> tags = new ArrayList<>();
+
+        for (int i = 0; i < jsonArray.length(); i++) {
+            String tag = jsonArray.getString(i);
+            tags.add(tag);
+        }
+        return tags;
+    }
 
     public Integer getId() {
         return id;
