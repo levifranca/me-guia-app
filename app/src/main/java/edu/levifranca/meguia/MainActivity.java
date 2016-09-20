@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private Sensor mAccelerometer;
     private MovementDetector mMovementDetector;
 
-    private boolean hasLeftToEnableLocation = false;
+    private boolean willBeRightBack = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,14 +127,14 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected void onResume() {
         super.onResume();
 
-        hasLeftToEnableLocation = false;
+        willBeRightBack = false;
         beaconManager.bind(this);
         mSensorManager.registerListener(mMovementDetector, mAccelerometer,	SensorManager.SENSOR_DELAY_UI);
     }
 
     @Override
     protected void onPause() {
-        if (hasLeftToEnableLocation) {
+        if (willBeRightBack) {
             super.onPause();
             return;
         }
@@ -188,6 +188,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         } else {
             Log.d(TAG, "Requesting to enable Bluetooth");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            willBeRightBack = true;
             startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST_CODE);
         }
         Log.d(TAG, "END - checkBluetooth");
@@ -199,10 +200,9 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             Log.d(TAG, "Requesting Location Permission.");
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
                 showLongToast(R.string.message_allow_location);
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
-            } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
             }
+            willBeRightBack = true;
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
 
         } else {
             checkLocationEnabledForAPI23orHigher();
@@ -219,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             Log.d(TAG, "API is greater than 23. Need Location Enabled");
             Intent gpsOptionsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             showLongToast(R.string.message_enable_location);
-            hasLeftToEnableLocation = true;
+            willBeRightBack = true;
             startActivityForResult(gpsOptionsIntent, LOCATION_ENABLE_REQUEST_CODE);
 
         } else {
