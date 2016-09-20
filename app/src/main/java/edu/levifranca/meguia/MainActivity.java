@@ -198,8 +198,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "Requesting Location Permission.");
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                // TODO Move to string.xml
-                Toast.makeText(this, "Por Favor, permita a localização.", Toast.LENGTH_LONG).show();
+                showLongToast(R.string.message_allow_location);
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
             } else {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
@@ -219,8 +218,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
             Log.d(TAG, "API is greater than 23. Need Location Enabled");
             Intent gpsOptionsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            // TODO Move to strings.xml
-            Toast.makeText(this, "Por Favor, habilite a localização.", Toast.LENGTH_LONG).show();
+            showLongToast(R.string.message_enable_location);
             hasLeftToEnableLocation = true;
             startActivityForResult(gpsOptionsIntent, LOCATION_ENABLE_REQUEST_CODE);
 
@@ -242,8 +240,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             }
             if (RESULT_CANCELED == resultCode) {
                 Log.d(TAG, "Bluetooth was NOT enabled.");
-                // TODO Move to strings.xml
-                Toast.makeText(this, "Por favor habilite o bluetooth.", Toast.LENGTH_LONG).show();
+                showLongToast(R.string.message_enable_bluetooth);
             }
 
         }
@@ -256,8 +253,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                 startRanging();
             } else {
                 Log.d(TAG, "Location was NOT enabled.");
-                // TODO Move to strings.xml
-                Toast.makeText(this, "Por Favor, habilite a localização.", Toast.LENGTH_LONG).show();
+                showLongToast(R.string.message_enable_location);
             }
         }
 
@@ -280,8 +276,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             }
             if (PackageManager.PERMISSION_DENIED == resultCode) {
                 Log.d(TAG, "Location was NOT allowed.");
-                // TODO Move to strings.xml
-                Toast.makeText(this, "Por Favor, permita a localização.", Toast.LENGTH_LONG).show();
+                showLongToast(R.string.message_allow_location);
             }
         }
     }
@@ -377,7 +372,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             return;
         }
 
-        Toast.makeText(this, lastBeaconInfo.getMensagem(), Toast.LENGTH_LONG).show();
+        showLongToast(lastBeaconInfo.getMensagem());
 
         if (lastBeaconInfo.getVibrar()) {
             Log.d(TAG, "Beacon is set to vibrate device. Vibrating...");
@@ -398,6 +393,14 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         BeaconInfo bInfo = BeaconInfo.getInstanceFromJSON(beaconJson);
         Log.d(TAG, "END - parseJsonForGetByMacAddress");
         return bInfo;
+    }
+
+    private void showLongToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    private void showLongToast(int resId) {
+        Toast.makeText(this, resId, Toast.LENGTH_LONG).show();
     }
 
 }

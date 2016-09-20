@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">MeGuia</string>
     <string name="button_repeat_message">Repetir Mensagem</string>
+    <string name="message_allow_location">Por Favor, permita a localização.</string>
+    <string name="message_enable_location">Por Favor, habilite a localização.</string>
+    <string name="message_enable_bluetooth">Por favor habilite o bluetooth.</string>
 </resources>
