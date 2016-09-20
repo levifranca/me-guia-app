@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.os.Build;
@@ -43,12 +41,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
-public class MainActivity extends AppCompatActivity implements BeaconConsumer, SensorEventListener {
+public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     protected static final String TAG = "MainActivity";
 
     public static final String ME_GUIA_SERVER_PROTOCOL = "http://";
-    public static final String ME_GUIA_SERVER_DOMAIN = "172.16.26.43";
+    public static final String ME_GUIA_SERVER_DOMAIN = "192.168.25.23";
     public static final String ME_GUIA_SERVER_PORT = ":1080";
 
     public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT;
@@ -61,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
 
     private static final String IBEACON_LAYOUT = "m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24";
 
-    private Boolean isRanging = false;
+    private boolean isRanging = false;
     private Region region = new Region("myRangingUniqueId", null, null, null);
 
     private float lastX;
@@ -73,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
     private RequestQueue queue;
 
     private BeaconInfo lastBeaconInfo;
+
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+    private MovementDetector mMovementDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,12 +96,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
         beaconManager.getBeaconParsers().add(new BeaconParser("IBEACON").setBeaconLayout(IBEACON_LAYOUT));
         Log.d(TAG, "END - BeaconManager initialization");
 
-        Log.d(TAG, "START - SensorManager initialization");
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        Sensor accelerometer = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER).get(0);
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        Log.d(TAG, "END - SensorManager initialization");
-
         Log.d(TAG, "START - LocationManager initialization");
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Log.d(TAG, "END - LocationManager initialization");
@@ -112,7 +108,45 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         Log.d(TAG, "END - Vibrator");
 
+        Log.d(TAG, "START - ");
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mMovementDetector = new MovementDetector();
+        mMovementDetector.setOnMovementListener(new OnMovementListener() {
+            @Override
+            public void onMovement() {
+                startRanging();
+            }
+        });
+
         Log.d(TAG, "END - MainActivity onCreate");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        beaconManager.bind(this);
+        mSensorManager.registerListener(mMovementDetector, mAccelerometer,	SensorManager.SENSOR_DELAY_UI);
+    }
+
+    @Override
+    protected void onPause() {
+        mSensorManager.unregisterListener(mMovementDetector);
+        stopRanging();
+        beaconManager.unbind(this);
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d(TAG, "START - onDestroy");
+        super.onDestroy();
+
+        stopRanging();
+        beaconManager.unbind(this);
+
+        Log.d(TAG, "END - onDestroy");
     }
 
     public void repeatLastMessage(View view) {
@@ -195,6 +229,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
 
     private void stopRanging() {
         Log.d(TAG, "START - stopRanging");
+        if(!isRanging) {
+            Log.d(TAG, "We were not ranging.");
+            return;
+        }
         try {
             beaconManager.stopRangingBeaconsInRegion(region);
             isRanging = false;
@@ -203,15 +241,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
             Log.e(TAG, "Error when stoping ranging for beacon.", e);
         }
         Log.d(TAG, "END - stopRanging");
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.d(TAG, "START - onDestroy");
-        super.onDestroy();
-        beaconManager.unbind(this);
-
-        Log.d(TAG, "END - onDestroy");
     }
 
     @Override
@@ -235,32 +264,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
             }
 
         });
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        Log.v(TAG, "START - onSensorChanged");
-
-        float xChange = lastX - event.values[0];
-        float yChange = lastY - event.values[1];
-        float zChange = lastZ - event.values[2];
-
-        lastX = event.values[0];
-        lastY = event.values[1];
-        lastZ = event.values[2];
-
-        double changeAbs = Math.abs(xChange) + Math.abs(yChange) + Math.abs(zChange);
-
-        if(changeAbs > THRESHOLD) {
-            Log.d(TAG, "Change was above the threshold. Change was " + changeAbs);
-            startRanging();
-        }
-        Log.v(TAG, "END - onSensorChanged");
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-        // do nothing
     }
 
     private void getBeaconInfoFor(String macAddress) {
@@ -287,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError e) {
-                        Log.e(TAG, "Error on response - Status Code: " + e.networkResponse.statusCode);
+                        Log.e(TAG, "Error on response - " + e);
                     }
                 });
         queue.add(jsonRequest);
@@ -323,8 +326,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer, S
         Log.d(TAG, "END - parseJsonForGetByMacAddress");
         return bInfo;
     }
-
-
 
     // TODO: Refatorar o código
 }
