@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -50,7 +51,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     public static final String ME_GUIA_SERVER_PORT = ":1080";
 
     public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT;
+
+    public static final int LOCATION_PERMISSION_REQUEST_CODE = 0;
     public static final int BLUETOOTH_ENABLE_REQUEST_CODE = 1;
+    public static final int LOCATION_ENABLE_REQUEST_CODE = 2;
 
     private BeaconManager beaconManager;
     private LocationManager locationManager;
@@ -70,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
     private MovementDetector mMovementDetector;
+
+    private boolean hasLeftToEnableLocation = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         mMovementDetector.setOnMovementListener(new OnMovementListener() {
             @Override
             public void onMovement() {
-                startRanging();
+                triggerRanging();
             }
         });
 
@@ -121,12 +127,18 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected void onResume() {
         super.onResume();
 
+        hasLeftToEnableLocation = false;
         beaconManager.bind(this);
         mSensorManager.registerListener(mMovementDetector, mAccelerometer,	SensorManager.SENSOR_DELAY_UI);
     }
 
     @Override
     protected void onPause() {
+        if (hasLeftToEnableLocation) {
+            super.onPause();
+            return;
+        }
+
         mSensorManager.unregisterListener(mMovementDetector);
         stopRanging();
         beaconManager.unbind(this);
@@ -150,73 +162,29 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         Log.d(TAG, "END - repeatLastMessage");
     }
 
-    private void startRanging() {
-        Log.d(TAG, "START - startRanging");
+    private void triggerRanging() {
+        Log.d(TAG, "START - triggerRanging");
         if (isRanging) {
             Log.v(TAG, "Sensor changed but we are already ranging.");
             return;
         }
 
-        if (!hasPermissions()) {
-            Log.d(TAG, "Does not have the required permissions.");
-            return;
-        }
-        try {
-            beaconManager.startRangingBeaconsInRegion(region);
-            isRanging = true;
-            Log.d(TAG, "BeaconRanging - START");
-        } catch (RemoteException e) {
-            Log.e(TAG, "Error when starting ranging for beacons", e);
-        }
-        Log.d(TAG, "END - startRanging");
+        checkPermissionAndHardwareState();
+
     }
 
-    // FIXME
-    private boolean hasPermissions() {
-        Log.d(TAG, "START - hasPermissions");
-
-        boolean result;
+    private void checkPermissionAndHardwareState() {
+        Log.d(TAG, "START - checkPermissionAndHardwareState");
 
         checkBluetooth();
 
-        /*
-        Log.d(TAG, "Checking for location permissions");
-        boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        boolean isAPI23OrGreater = Build.VERSION.SDK_INT >= 23;
-        if (isAPI23OrGreater && !isGPSEnabled) {
-            Log.d(TAG, "API is greater than 23. Need Location Enabled");
-            Intent gpsOptionsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            // TODO Move to strings.xml
-            Toast.makeText(this, "Por Favor, habilite a localização.", Toast.LENGTH_LONG).show();
-            startActivityForResult(gpsOptionsIntent, 1);
-        }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            Log.d(TAG, "Requesting Location Permission.");
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION)) {
-            } else {
-                Log.d(TAG, "????"); //FIXME
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        0);
-            }
-            result = false;
-
-        }
-        */
-        result = true;
-        Log.d(TAG, "END - hasPermissions");
-        return result;
+        Log.d(TAG, "END - checkPermissionAndHardwareState");
     }
 
     private void checkBluetooth() {
         Log.d(TAG, "START - checkBluetooth");
         if(mBluetoothAdapter.isEnabled()) {
-            checkLocation();
+            checkLocationPermission();
         } else {
             Log.d(TAG, "Requesting to enable Bluetooth");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -225,8 +193,40 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         Log.d(TAG, "END - checkBluetooth");
     }
 
-    private void checkLocation() {
+    private void checkLocationPermission() {
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "Requesting Location Permission.");
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                // TODO Move to string.xml
+                Toast.makeText(this, "Por Favor, permita a localização.", Toast.LENGTH_LONG).show();
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+            }
+
+        } else {
+            checkLocationEnabledForAPI23orHigher();
+        }
+
+    }
+
+    private void checkLocationEnabledForAPI23orHigher() {
+
+        boolean isAPI23OrGreater = Build.VERSION.SDK_INT >= 23;
+        boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (isAPI23OrGreater && !isGPSEnabled) {
+
+            Log.d(TAG, "API is greater than 23. Need Location Enabled");
+            Intent gpsOptionsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            // TODO Move to strings.xml
+            Toast.makeText(this, "Por Favor, habilite a localização.", Toast.LENGTH_LONG).show();
+            hasLeftToEnableLocation = true;
+            startActivityForResult(gpsOptionsIntent, LOCATION_ENABLE_REQUEST_CODE);
+
+        } else {
+            startRanging();
+        }
 
     }
 
@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
             if (RESULT_OK == resultCode) {
                 Log.d(TAG, "Bluetooth was enabled.");
-                checkLocation();
+                checkLocationPermission();
             }
             if (RESULT_CANCELED == resultCode) {
                 Log.d(TAG, "Bluetooth was NOT enabled.");
@@ -248,6 +248,56 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
         }
 
+        if (LOCATION_ENABLE_REQUEST_CODE == requestCode) {
+            // Result code won't matter here as the user needs to tap the back button
+            boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if (isGPSEnabled) {
+                Log.d(TAG, "Location was enabled.");
+                startRanging();
+            } else {
+                Log.d(TAG, "Location was NOT enabled.");
+                // TODO Move to strings.xml
+                Toast.makeText(this, "Por Favor, habilite a localização.", Toast.LENGTH_LONG).show();
+            }
+        }
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+
+        if (LOCATION_PERMISSION_REQUEST_CODE == requestCode) {
+            if (permissions.length == 0) {
+                Log.e(TAG, "Permission request interrupted.");
+                return;
+            }
+            int resultCode = grantResults[0];
+            if (PackageManager.PERMISSION_GRANTED == resultCode) {
+                Log.d(TAG, "Location was allowed.");
+                checkLocationEnabledForAPI23orHigher();
+            }
+            if (PackageManager.PERMISSION_DENIED == resultCode) {
+                Log.d(TAG, "Location was NOT allowed.");
+                // TODO Move to strings.xml
+                Toast.makeText(this, "Por Favor, permita a localização.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void startRanging() {
+        if (!beaconManager.isBound(this)) {
+            beaconManager.bind(this);
+        }
+        try {
+            beaconManager.startRangingBeaconsInRegion(region);
+            isRanging = true;
+            Log.d(TAG, "BeaconRanging - START");
+        } catch (RemoteException e) {
+            Log.e(TAG, "Error when starting ranging for beacons", e);
+        }
+        Log.d(TAG, "END - startRanging");
     }
 
     private void stopRanging() {
@@ -350,5 +400,4 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         return bInfo;
     }
 
-    // TODO: Refatorar o código
 }
