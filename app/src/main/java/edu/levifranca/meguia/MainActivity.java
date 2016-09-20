@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     public static final String ME_GUIA_SERVER_PORT = ":1080";
 
     public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT;
+    public static final int BLUETOOTH_ENABLE_REQUEST_CODE = 1;
 
     private BeaconManager beaconManager;
     private LocationManager locationManager;
@@ -61,12 +62,6 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private boolean isRanging = false;
     private Region region = new Region("myRangingUniqueId", null, null, null);
-
-    private float lastX;
-    private float lastY;
-    private float lastZ;
-
-    int THRESHOLD = 15;
 
     private RequestQueue queue;
 
@@ -162,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             return;
         }
 
-        if (!hasPermissionsNeeded()) {
+        if (!hasPermissions()) {
             Log.d(TAG, "Does not have the required permissions.");
             return;
         }
@@ -177,13 +172,14 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     // FIXME
-    private boolean hasPermissionsNeeded() {
-        Log.d(TAG, "START - hasPermissionsNeeded");
+    private boolean hasPermissions() {
+        Log.d(TAG, "START - hasPermissions");
 
         boolean result;
 
         checkBluetooth();
 
+        /*
         Log.d(TAG, "Checking for location permissions");
         boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         boolean isAPI23OrGreater = Build.VERSION.SDK_INT >= 23;
@@ -209,22 +205,49 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
                         0);
             }
             result = false;
-        }
 
+        }
+        */
         result = true;
-        Log.d(TAG, "END - hasPermissionsNeeded");
+        Log.d(TAG, "END - hasPermissions");
         return result;
     }
 
     private void checkBluetooth() {
         Log.d(TAG, "START - checkBluetooth");
-        if(!mBluetoothAdapter.isEnabled())
-        {
+        if(mBluetoothAdapter.isEnabled()) {
+            checkLocation();
+        } else {
             Log.d(TAG, "Requesting to enable Bluetooth");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
+            startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST_CODE);
         }
         Log.d(TAG, "END - checkBluetooth");
+    }
+
+    private void checkLocation() {
+
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(BLUETOOTH_ENABLE_REQUEST_CODE == requestCode) {
+
+            if (RESULT_OK == resultCode) {
+                Log.d(TAG, "Bluetooth was enabled.");
+                checkLocation();
+            }
+            if (RESULT_CANCELED == resultCode) {
+                Log.d(TAG, "Bluetooth was NOT enabled.");
+                // TODO Move to strings.xml
+                Toast.makeText(this, "Por favor habilite o bluetooth.", Toast.LENGTH_LONG).show();
+            }
+
+        }
+
     }
 
     private void stopRanging() {
