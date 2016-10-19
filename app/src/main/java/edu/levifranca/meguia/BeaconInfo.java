@@ -28,7 +28,7 @@ public class BeaconInfo {
 
     private Boolean vibrar;
 
-    private String regiao;
+    private Regiao regiao;
 
     private Boolean ativo;
 
@@ -43,7 +43,7 @@ public class BeaconInfo {
         bInfo.setMensagem(beaconJson.getString("mensagem"));
         bInfo.setAudio(beaconJson.getString("audio"));
         bInfo.setVibrar(beaconJson.getBoolean("vibrar"));
-        bInfo.setRegiao(beaconJson.getString("regiao"));
+        bInfo.setRegiao(Regiao.getInstanceFromJSON(beaconJson.getJSONObject("regiao")));
         bInfo.setAtivo(beaconJson.getBoolean("ativo"));
 
         return bInfo;
@@ -123,11 +123,11 @@ public class BeaconInfo {
         this.vibrar = vibrar;
     }
 
-    public String getRegiao() {
+    public Regiao getRegiao() {
         return regiao;
     }
 
-    public void setRegiao(String regiao) {
+    public void setRegiao(Regiao regiao) {
         this.regiao = regiao;
     }
 

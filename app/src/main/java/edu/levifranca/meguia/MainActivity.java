@@ -25,6 +25,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -47,10 +48,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected static final String TAG = "MainActivity";
 
     public static final String ME_GUIA_SERVER_PROTOCOL = "http://";
-    public static final String ME_GUIA_SERVER_DOMAIN = "192.168.25.23";
-    public static final String ME_GUIA_SERVER_PORT = ":1080";
+    public static final String ME_GUIA_SERVER_DOMAIN = "172.16.26.43";
+    public static final String ME_GUIA_SERVER_PORT = ":8080";
+    public static final String ME_GUIA_SERVER_CONTEXT_PATH = "/me-guia-server";
 
-    public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT;
+    public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT + ME_GUIA_SERVER_CONTEXT_PATH;
 
     public static final int LOCATION_PERMISSION_REQUEST_CODE = 0;
     public static final int BLUETOOTH_ENABLE_REQUEST_CODE = 1;
@@ -336,11 +338,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
 
     private void getBeaconInfoFor(String macAddress) {
         Log.d(TAG, "START - getBeaconInfoFor");
-        final String url = ME_GUIA_SERVER_HOST + "/beacon_info?mac_address=" + macAddress;
-        JsonObjectRequest jsonRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
+        final String url = ME_GUIA_SERVER_HOST + "/api/beacon_info?mac_address=" + macAddress;
+        JsonArrayRequest jsonRequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONArray>() {
                     @Override
-                    public void onResponse(JSONObject response) {
+                    public void onResponse(JSONArray response) {
                         Log.d(TAG, "Response for " + url + " successful.");
                         try {
                             BeaconInfo bInfo = parseJsonForGetByMacAddress(response);
@@ -382,13 +384,10 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         Log.d(TAG, "END - playMessage");
     }
 
-    private BeaconInfo parseJsonForGetByMacAddress(JSONObject response) throws JSONException {
+    private BeaconInfo parseJsonForGetByMacAddress(JSONArray response) throws JSONException {
         Log.d(TAG, "START - parseJsonForGetByMacAddress");
-        JSONObject sucessoObj = response.getJSONObject("sucesso");
 
-        JSONArray beacons = sucessoObj.getJSONArray("beacons");
-
-        JSONObject beaconJson = beacons.getJSONObject(0);
+        JSONObject beaconJson = response.getJSONObject(0);
 
         BeaconInfo bInfo = BeaconInfo.getInstanceFromJSON(beaconJson);
         Log.d(TAG, "END - parseJsonForGetByMacAddress");

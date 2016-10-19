@@ -11,7 +11,7 @@ import android.util.Log;
  */
 public class MovementDetector implements SensorEventListener {
 
-    private static final float MOVEMENT_THRESHOLD_GRAVITY = 1.9F;
+    private static final float MOVEMENT_THRESHOLD_GRAVITY = 1.3F;
     private static final int MOVEMENT_SLOP_TIME_MS = 500;
 
     private OnMovementListener mListener;
