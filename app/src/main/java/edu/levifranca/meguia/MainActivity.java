@@ -8,6 +8,9 @@ import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -26,7 +29,6 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.altbeacon.beacon.Beacon;
@@ -39,6 +41,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -374,7 +382,15 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             return;
         }
 
-        showLongToast(lastBeaconInfo.getMensagem());
+        String audioPath = lastBeaconInfo.getAudio();
+        if (audioPath == null || audioPath.length() == 0) {
+            showLongToast(lastBeaconInfo.getMensagem());
+        } else {
+
+            downloadAndPlayAudio(audioPath);
+
+        }
+
 
         if (lastBeaconInfo.getVibrar()) {
             Log.d(TAG, "Beacon is set to vibrate device. Vibrating...");
@@ -382,6 +398,68 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             vibrator.vibrate(pattern, -1);
         }
         Log.d(TAG, "END - playMessage");
+    }
+
+    private void downloadAndPlayAudio(String audioPath) {
+
+        AsyncTask<String, Void, File> asyncTask = new AsyncTask<String, Void, File>() {
+
+            @Override
+            protected File doInBackground(String... id) {
+                File audioFile = null;
+
+                FileOutputStream f = null;
+                try {
+                    URL u = new URL(ME_GUIA_SERVER_HOST + "/api/beacon/" + id[0] + "/audio.mp3");
+                    HttpURLConnection c = (HttpURLConnection) u.openConnection();
+                    c.setRequestMethod("GET");
+                    //c.setDoOutput(true);
+                    c.connect();
+
+                    //audioFile = new File("beacons-audio/" + id + ".mp3");
+                    //f = new FileOutputStream(audioFile);
+                    f = openFileOutput("beacons-audio-" + id[0] + ".mp3", MODE_PRIVATE);
+
+                    Log.d(TAG, new Integer(c.getResponseCode()).toString());
+                    InputStream in = c.getInputStream();
+
+                    byte[] buffer = new byte[1024];
+                    int len1 = 0;
+                    while ((len1 = in.read(buffer)) > 0) {
+                        f.write(buffer, 0, len1);
+                    }
+                    f.close();
+
+                    audioFile = getFileStreamPath("beacons-audio-" + id[0] + ".mp3");
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error on get and play audio file.", e);
+                } finally {
+                    if (f != null) {
+                        try {
+                            f.close();
+                        } catch (IOException e) {}
+                    }
+                }
+
+                return audioFile;
+            }
+
+            @Override
+            protected void onPostExecute(File audioFile) {
+                if (audioFile == null) return;
+
+                playAudio(audioFile);
+            }
+        };
+        asyncTask.execute(lastBeaconInfo.getId().toString());
+    }
+
+    private void playAudio(File audioFile) {
+
+        MediaPlayer mp = MediaPlayer.create(this, Uri.fromFile(audioFile));
+        mp.start();
+
     }
 
     private BeaconInfo parseJsonForGetByMacAddress(JSONArray response) throws JSONException {
