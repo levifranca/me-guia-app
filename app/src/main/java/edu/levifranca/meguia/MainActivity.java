@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected static final String TAG = "MainActivity";
 
     public static final String ME_GUIA_SERVER_PROTOCOL = "http://";
-    public static final String ME_GUIA_SERVER_DOMAIN = "172.16.26.43";
+    public static final String ME_GUIA_SERVER_DOMAIN = "192.168.25.23";
     public static final String ME_GUIA_SERVER_PORT = ":8080";
     public static final String ME_GUIA_SERVER_CONTEXT_PATH = "/me-guia-server";
 

@@ -20,8 +20,6 @@ public class BeaconInfo {
 
     private String descricao;
 
-    private List<String> tags;
-
     private String mensagem;
 
     private String audio;
@@ -39,7 +37,6 @@ public class BeaconInfo {
         bInfo.setNome(beaconJson.getString("nome"));
         bInfo.setEndereco_MAC(beaconJson.getString("endereco_mac"));
         bInfo.setDescricao(beaconJson.getString("descricao"));
-        bInfo.setTags(getTagListFromJSONArray(beaconJson.getJSONArray("tags")));
         bInfo.setMensagem(beaconJson.getString("mensagem"));
         bInfo.setAudio(beaconJson.getString("audio"));
         bInfo.setVibrar(beaconJson.getBoolean("vibrar"));
@@ -47,16 +44,6 @@ public class BeaconInfo {
         bInfo.setAtivo(beaconJson.getBoolean("ativo"));
 
         return bInfo;
-    }
-
-    private static List<String> getTagListFromJSONArray(JSONArray jsonArray) throws JSONException {
-        List<String> tags = new ArrayList<>();
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            String tag = jsonArray.getString(i);
-            tags.add(tag);
-        }
-        return tags;
     }
 
     public Integer getId() {
@@ -89,14 +76,6 @@ public class BeaconInfo {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
-    }
-
-    public List<String> getTags() {
-        return tags;
-    }
-
-    public void setTags(List<String> tags) {
-        this.tags = tags;
     }
 
     public String getMensagem() {
