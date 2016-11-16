@@ -15,5 +15,6 @@
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
         android:text="@string/button_repeat_message"
-        android:onClick="repeatLastMessage"/>
+        android:onClick="repeatLastMessage"
+        android:contentDescription="@string/button_repeat_message"/>
 </RelativeLayout>
