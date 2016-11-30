@@ -38,7 +38,7 @@ public class BeaconInfo {
         bInfo.setEndereco_MAC(beaconJson.getString("endereco_mac"));
         bInfo.setDescricao(beaconJson.getString("descricao"));
         bInfo.setMensagem(beaconJson.getString("mensagem"));
-        bInfo.setAudio(beaconJson.getString("audio"));
+        bInfo.setAudio(beaconJson.isNull("audio") ? null : beaconJson.getString("audio"));
         bInfo.setVibrar(beaconJson.getBoolean("vibrar"));
         bInfo.setRegiao(Regiao.getInstanceFromJSON(beaconJson.getJSONObject("regiao")));
         bInfo.setAtivo(beaconJson.getBoolean("ativo"));

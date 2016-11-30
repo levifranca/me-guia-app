@@ -56,11 +56,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     protected static final String TAG = "MainActivity";
 
     public static final String ME_GUIA_SERVER_PROTOCOL = "http://";
-    public static final String ME_GUIA_SERVER_DOMAIN = "172.16.26.43";
+    public static final String ME_GUIA_SERVER_DOMAIN = "35.185.11.94";
     public static final String ME_GUIA_SERVER_PORT = ":8080";
     public static final String ME_GUIA_SERVER_CONTEXT_PATH = "/me-guia-server";
 
-    public static final String ME_GUIA_SERVER_HOST = ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT + ME_GUIA_SERVER_CONTEXT_PATH;
+    public static final String ME_GUIA_SERVER_HOST = "https://meguia.levifranca.com"; //ME_GUIA_SERVER_PROTOCOL + ME_GUIA_SERVER_DOMAIN + ME_GUIA_SERVER_PORT + ME_GUIA_SERVER_CONTEXT_PATH;
 
     public static final int LOCATION_PERMISSION_REQUEST_CODE = 0;
     public static final int BLUETOOTH_ENABLE_REQUEST_CODE = 1;
