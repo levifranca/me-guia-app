@@ -191,7 +191,12 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         Log.d(TAG, "END - checkPermissionAndHardwareState");
     }
 
+    private boolean checkingBluetooh = false;
+
     private void checkBluetooth() {
+        if (checkingBluetooh) {
+            return;
+        }
         Log.d(TAG, "START - checkBluetooth");
         if(mBluetoothAdapter.isEnabled()) {
             checkLocationPermission();
@@ -199,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
             Log.d(TAG, "Requesting to enable Bluetooth");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             willBeRightBack = true;
+            checkingBluetooh = true;
             startActivityForResult(enableBtIntent, BLUETOOTH_ENABLE_REQUEST_CODE);
         }
         Log.d(TAG, "END - checkBluetooth");
@@ -243,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         super.onActivityResult(requestCode, resultCode, data);
 
         if(BLUETOOTH_ENABLE_REQUEST_CODE == requestCode) {
-
+            checkingBluetooh = false;
             if (RESULT_OK == resultCode) {
                 Log.d(TAG, "Bluetooth was enabled.");
                 checkLocationPermission();
