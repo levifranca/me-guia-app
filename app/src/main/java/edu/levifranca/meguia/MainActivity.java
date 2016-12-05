@@ -9,6 +9,8 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -46,6 +48,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -173,11 +176,11 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     private void triggerRanging() {
-        Log.d(TAG, "START - triggerRanging");
         if (isRanging) {
             Log.v(TAG, "Sensor changed but we are already ranging.");
             return;
         }
+        Log.d(TAG, "START - triggerRanging");
 
         checkPermissionAndHardwareState();
 
@@ -186,10 +189,23 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     private void checkPermissionAndHardwareState() {
         Log.d(TAG, "START - checkPermissionAndHardwareState");
 
-        checkBluetooth();
+        checkInternet();
 
         Log.d(TAG, "END - checkPermissionAndHardwareState");
     }
+
+    public void checkInternet() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+
+        if (!(activeNetwork != null && activeNetwork.isConnectedOrConnecting())) {
+            showLongToast(R.string.message_enable_internet);
+        } else {
+            checkBluetooth();
+        }
+    }
+
 
     private boolean checkingBluetooh = false;
 
